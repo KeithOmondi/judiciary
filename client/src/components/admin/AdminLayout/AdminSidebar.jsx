@@ -1,0 +1,102 @@
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  MdDashboard,
+  MdLibraryBooks,
+  MdAddBox,
+  MdHistory,
+  MdLock,
+  MdLogout,
+} from "react-icons/md";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { logout, resetAuthState } from "../../../store/slices/authSlice";
+
+const AdminSidebar = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const navLinks = [
+  {
+    to: "/admin/dashboard",
+    label: "Dashboard",
+    icon: <MdDashboard size={20} />,
+  },
+  {
+    to: "/admin/books",
+    label: "Manage Books",
+    icon: <MdLibraryBooks size={20} />,
+  },
+  {
+    to: "/admin/books/add",
+    label: "Add Book",
+    icon: <MdAddBox size={20} />,
+  },
+  {
+    to: "/admin/borrows",
+    label: "Borrowed Records",
+    icon: <MdHistory size={20} />,
+  },
+  {
+    to: "/admin/borrowed-books", // 👈 Add this new route
+    label: "Borrowed Book List", // 👈 Label for the admin view
+    icon: <MdLibraryBooks size={20} />,
+  },
+  {
+    to: "/change-password",
+    label: "Change Password",
+    icon: <MdLock size={20} />,
+  },
+];
+
+
+  const handleLogout = async () => {
+  try {
+    await dispatch(logout()).unwrap(); // Ensure logout succeeds
+    dispatch(resetAuthState()); // Clear auth state manually
+    toast.success("Logged out successfully."); // Optional toast
+    navigate("/login");
+  } catch (err) {
+    toast.error(err || "Logout failed.");
+  }
+};
+
+
+  return (
+    <aside className="w-64 bg-white shadow-md min-h-screen flex flex-col">
+      <div className="p-6 border-b border-gray-200 text-xl font-bold text-gray-800">
+        Admin Panel
+      </div>
+
+      <nav className="flex flex-col p-4 space-y-2 flex-grow">
+        {navLinks.map(({ to, label, icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition ${
+                isActive ? "bg-blue-500 text-white" : ""
+              }`
+            }
+            end
+          >
+            {icon}
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="p-4 border-t border-gray-200">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full px-4 py-2 text-red-700 bg-red-100 hover:bg-red-200 rounded-md font-medium transition-colors"
+        >
+          <MdLogout size={20} />
+          Logout
+        </button>
+      </div>
+    </aside>
+  );
+};
+
+export default AdminSidebar;
