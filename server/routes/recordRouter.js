@@ -5,24 +5,13 @@ import {
   getRecordById,
   updateRecord,
   deleteRecord,
-  bulkUploadRecords,
   getAllRecordsForAdmin,
 } from "../controller/recordController.js";
 import { isAuthenticated, isAuthorized } from "../middlewares/authMiddleware.js";
-import { uploadPDFs } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
 // ========== CRUD Routes ==========
-
-// Bulk upload records (Admin only) - place BEFORE :id routes
-router.post(
-  "/bulk-upload",
-  isAuthenticated,
-  isAuthorized("Admin"),
-  uploadPDFs.array("files"), // Multer handles the incoming PDFs
-  bulkUploadRecords // Your controller handles uploading to Cloudinary
-);
 
 // Create a record (Admin only)
 router.post("/create", isAuthenticated, isAuthorized("Admin"), createRecord);

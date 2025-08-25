@@ -4,7 +4,6 @@ import {
   fetchAllRecordsForAdmin,
   deleteRecord,
   updateRecord,
-  bulkUploadRecords,
   resetRecordState,
 } from "../../store/slices/recordsSlice";
 import { toast, ToastContainer } from "react-toastify";
@@ -18,20 +17,16 @@ const RecordPage = () => {
 
   const [editingRecord, setEditingRecord] = useState(null);
   const [form, setForm] = useState({});
-  const [pdfFiles, setPdfFiles] = useState([]);
 
-  // Fetch records on mount
   useEffect(() => {
     dispatch(fetchAllRecordsForAdmin());
   }, [dispatch]);
 
-  // Toast notifications
   useEffect(() => {
     if (message) {
       toast.success(message);
       dispatch(resetRecordState());
       setEditingRecord(null);
-      setPdfFiles([]);
       dispatch(fetchAllRecordsForAdmin());
     }
     if (error) {
@@ -40,25 +35,6 @@ const RecordPage = () => {
     }
   }, [message, error, dispatch]);
 
-  // ===== Bulk Upload =====
-  const handleFileChange = (e) => {
-    setPdfFiles(Array.from(e.target.files));
-  };
-
-  const handleBulkUpload = async (e) => {
-    e.preventDefault();
-    if (!pdfFiles || pdfFiles.length === 0) {
-      toast.error("Please select PDF files to upload");
-      return;
-    }
-
-    const formData = new FormData();
-    pdfFiles.forEach((file) => formData.append("files", file));
-
-    dispatch(bulkUploadRecords(formData));
-  };
-
-  // ===== CRUD =====
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this record?")) {
       dispatch(deleteRecord(id));
@@ -110,31 +86,6 @@ const RecordPage = () => {
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         📄 All Records (Admin)
       </h2>
-
-      {/* ===== Bulk Upload Section ===== */}
-      <div className="mb-6 p-4 border rounded bg-gray-50">
-        <h3 className="font-semibold mb-2">Bulk Upload PDFs</h3>
-        <form onSubmit={handleBulkUpload} className="flex items-center space-x-2">
-          <input
-            type="file"
-            accept="application/pdf"
-            multiple
-            onChange={handleFileChange}
-            className="border p-2 rounded"
-          />
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Upload
-          </button>
-        </form>
-        {pdfFiles.length > 0 && (
-          <p className="mt-2 text-gray-600">
-            {pdfFiles.length} file(s) selected: {pdfFiles.map(f => f.name).join(", ")}
-          </p>
-        )}
-      </div>
 
       {/* ===== Records Table ===== */}
       {loading ? (
@@ -234,6 +185,7 @@ const RecordPage = () => {
               <option value="Pending">Pending</option>
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
+              <option value="Published">Published</option>
             </select>
             <input
               type="text"

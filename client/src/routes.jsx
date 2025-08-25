@@ -18,6 +18,7 @@ import RecordsPage from "./pages/user/RecordsPage";
 // ✅ Layouts
 import AdminLayout from "./components/admin/AdminLayout/AdminLayout";
 import ManageRecordsPage from "./pages/admin/ManageRecordsPage";
+import BulkUpload from "./components/admin/BulkUpload";
 
 // =================== USER (PUBLIC) ROUTES ===================
 export const userRoutes = [
@@ -50,6 +51,14 @@ export const adminRoutes = [
     element: (
       <AdminLayout>
         <AddRecord />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/records/bulk-upload",
+    element: (
+      <AdminLayout>
+        <BulkUpload />
       </AdminLayout>
     ),
   },

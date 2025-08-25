@@ -9,14 +9,15 @@ const recordSchema = new mongoose.Schema(
     dateReceived: { type: Date, required: true },
     statusAtGP: {
       type: String,
-      enum: ["Pending", "Approved", "Rejected"],
-      default: "Pending",
+      enum: ["Pending", "Approved", "Rejected", "Published"], // add Published
+      default: "Published", // Gazette default
     },
+
     rejectionReason: {
       type: String,
       default: "", // Empty if not rejected
     },
-    datePublished: { type: Date }, // Optional until published
+    datePublished: { type: Date, required: false }, // Optional until published
     volumeNo: { type: String, required: true },
   },
   { timestamps: true }

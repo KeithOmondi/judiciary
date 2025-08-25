@@ -1,6 +1,5 @@
 import Record from "../models/Record.js";
-import cloudinary from "../utils/cloudinary.js";
-import fs from "fs";
+
 
 /**
  * Create new record (Admin only)
@@ -200,41 +199,26 @@ export const deleteRecord = async (req, res, next) => {
 /**
  * Bulk upload records (Admin only)
  */
-export const bulkUploadRecords = async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No PDF files uploaded" });
-    }
+// Helper: Format court station nicely
+const formatCourtStation = (rawText) => {
+  if (!rawText) return "Unknown";
 
-    const uploadedRecords = [];
+  // Match something like "CHIEF MAGISTRATE’S COURT AT THIKA"
+  const match = rawText.match(/COURT AT\s+([A-Z\s]+)/i);
+  if (!match) return "Unknown";
 
-    for (const file of req.files) {
-      // Upload PDF to Cloudinary
-      const result = await cloudinary.uploader.upload(file.path, {
-        resource_type: "raw", // needed for PDFs
-        folder: "records",    // folder in your Cloudinary account
-      });
+  let city = match[1].trim();
 
-      // Create record in MongoDB
-      const record = await Record.create({
-        pdfUrl: result.secure_url,
-        originalName: file.originalname,
-        // Optional: add extra fields like datePublished if needed
-      });
+  // Capitalize first letter of each word
+  city = city
+    .toLowerCase()
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 
-      uploadedRecords.push(record);
-
-      // Delete temp file
-      fs.unlinkSync(file.path);
-    }
-
-    res.status(201).json({
-      message: `${uploadedRecords.length} PDFs uploaded successfully`,
-      count: uploadedRecords.length,
-      records: uploadedRecords,
-    });
-  } catch (error) {
-    console.error("Bulk upload error:", error);
-    res.status(500).json({ message: "Failed to upload PDFs", error: error.message });
-  }
+  return `${city} Magistrate Court`;
 };
+
+
+
+

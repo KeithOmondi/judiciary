@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import recordReducer from "./slices/recordsSlice";
+import bulkReducer from "./slices/bulkSlice"
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     records: recordReducer,
+    bulk: bulkReducer
   },
 });

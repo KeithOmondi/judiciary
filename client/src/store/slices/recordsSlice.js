@@ -16,7 +16,7 @@ export const fetchRecords = createAsyncThunk(
   }
 );
 
-// ✅ Fetch all records for admin (no pagination)
+// Fetch all records for admin (no pagination)
 export const fetchAllRecordsForAdmin = createAsyncThunk(
   "records/fetchAllAdmin",
   async (_, { rejectWithValue }) => {
@@ -47,7 +47,7 @@ export const updateRecord = createAsyncThunk(
   "records/update",
   async ({ id, recordData }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${RECORD_API}/${id}`, recordData);
+      const res = await axios.put(`${RECORD_API}/update/${id}`, recordData);
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to update record");
@@ -67,26 +67,6 @@ export const deleteRecord = createAsyncThunk(
     }
   }
 );
-
-// ✅ Bulk upload records
-// ✅ Bulk upload PDF files
-export const bulkUploadRecords = createAsyncThunk(
-  "records/bulkUpload",
-  async (formData, { rejectWithValue }) => {
-    try {
-      const res = await axios.post(`${RECORD_API}/bulk-upload`, formData, {
-        withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return res.data; // { message, count }
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to upload records"
-      );
-    }
-  }
-);
-
 
 const recordsSlice = createSlice({
   name: "records",
@@ -128,7 +108,7 @@ const recordsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ✅ Fetch all records for admin
+      // Fetch all records for admin
       .addCase(fetchAllRecordsForAdmin.pending, (state) => {
         state.loading = true;
       })
@@ -159,14 +139,6 @@ const recordsSlice = createSlice({
       .addCase(deleteRecord.fulfilled, (state, action) => {
         state.records = state.records.filter((r) => r._id !== action.payload);
         state.message = "Record deleted successfully";
-      })
-
-      // ✅ Bulk upload
-      .addCase(bulkUploadRecords.fulfilled, (state, action) => {
-        state.message = `${action.payload.count} records uploaded successfully`;
-      })
-      .addCase(bulkUploadRecords.rejected, (state, action) => {
-        state.error = action.payload;
       });
   },
 });

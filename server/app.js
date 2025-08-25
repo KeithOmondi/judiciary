@@ -6,6 +6,7 @@ import { connectDB } from "./db/db.js";
 import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
 import authRouter from "./routes/authRouter.js";
 import recordRouter from "./routes/recordRouter.js"
+import bulkUploadRouter from "./routes/bulkUploadRouter.js"
 
 //import { notifyUsers } from "./services/notifyUsers.js";
 //import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
@@ -51,6 +52,7 @@ app.use((req, res, next) => {
 // ✅ Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/records", recordRouter);
+app.use("/api/v1/bulk", bulkUploadRouter);
 
 
 
