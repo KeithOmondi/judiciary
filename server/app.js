@@ -5,12 +5,10 @@ import cors from "cors";
 import { connectDB } from "./db/db.js";
 import { errorMiddleware } from "./middlewares/errorMiddlewares.js";
 import authRouter from "./routes/authRouter.js";
-import bookRouter from "./routes/bookRouter.js";
-import borrowRouter from "./routes/borrowRouter.js";
-import userRouter from "./routes/userRouter.js";
-import adminRouter from "./routes/adminRouter.js";
-import { notifyUsers } from "./services/notifyUsers.js";
-import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
+import recordRouter from "./routes/recordRouter.js"
+
+//import { notifyUsers } from "./services/notifyUsers.js";
+//import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -52,16 +50,14 @@ app.use((req, res, next) => {
 
 // ✅ Routes
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/book", bookRouter);
-app.use("/api/v1/borrow", borrowRouter);
-app.use("/api/v1/user", userRouter);
-app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/records", recordRouter);
+
 
 
 //notifyUsers service
-notifyUsers();
+//notifyUsers();
 
-removeUnverifiedAccounts();
+//removeUnverifiedAccounts();
 // ✅ DB connection
 connectDB();
 

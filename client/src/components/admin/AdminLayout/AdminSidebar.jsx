@@ -4,7 +4,8 @@ import {
   MdDashboard,
   MdLibraryBooks,
   MdAddBox,
-  MdHistory,
+  MdUploadFile,
+  MdPeople,
   MdLock,
   MdLogout,
 } from "react-icons/md";
@@ -17,57 +18,57 @@ const AdminSidebar = () => {
   const navigate = useNavigate();
 
   const navLinks = [
-  {
-    to: "/admin/dashboard",
-    label: "Dashboard",
-    icon: <MdDashboard size={20} />,
-  },
-  {
-    to: "/admin/books",
-    label: "Manage Books",
-    icon: <MdLibraryBooks size={20} />,
-  },
-  {
-    to: "/admin/books/add",
-    label: "Add Book",
-    icon: <MdAddBox size={20} />,
-  },
-  {
-    to: "/admin/borrows",
-    label: "Borrowed Records",
-    icon: <MdHistory size={20} />,
-  },
-  {
-    to: "/admin/borrowed-books", // 👈 Add this new route
-    label: "Borrowed Book List", // 👈 Label for the admin view
-    icon: <MdLibraryBooks size={20} />,
-  },
-  {
-    to: "/change-password",
-    label: "Change Password",
-    icon: <MdLock size={20} />,
-  },
-];
-
+    {
+      to: "/admin/dashboard",
+      label: "Dashboard",
+      icon: <MdDashboard size={20} />,
+    },
+    {
+      to: "/admin/records",
+      label: "Manage Records",
+      icon: <MdLibraryBooks size={20} />,
+    },
+    {
+      to: "/admin/records/add",
+      label: "Add Record",
+      icon: <MdAddBox size={20} />,
+    },
+    {
+      to: "/admin/records/bulk-upload",
+      label: "Bulk Upload",
+      icon: <MdUploadFile size={20} />,
+    },
+    {
+      to: "/admin/users",
+      label: "Manage Users",
+      icon: <MdPeople size={20} />,
+    },
+    {
+      to: "/change-password",
+      label: "Change Password",
+      icon: <MdLock size={20} />,
+    },
+  ];
 
   const handleLogout = async () => {
-  try {
-    await dispatch(logout()).unwrap(); // Ensure logout succeeds
-    dispatch(resetAuthState()); // Clear auth state manually
-    toast.success("Logged out successfully."); // Optional toast
-    navigate("/login");
-  } catch (err) {
-    toast.error(err || "Logout failed.");
-  }
-};
-
+    try {
+      await dispatch(logout()).unwrap(); // Ensure logout succeeds
+      dispatch(resetAuthState()); // Clear auth state manually
+      toast.success("Logged out successfully.");
+      navigate("/login");
+    } catch (err) {
+      toast.error(err || "Logout failed.");
+    }
+  };
 
   return (
     <aside className="w-64 bg-white shadow-md min-h-screen flex flex-col">
+      {/* Header */}
       <div className="p-6 border-b border-gray-200 text-xl font-bold text-gray-800">
-        Admin Panel
+        Gazette Admin
       </div>
 
+      {/* Navigation */}
       <nav className="flex flex-col p-4 space-y-2 flex-grow">
         {navLinks.map(({ to, label, icon }) => (
           <NavLink
@@ -86,6 +87,7 @@ const AdminSidebar = () => {
         ))}
       </nav>
 
+      {/* Footer / Logout */}
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleLogout}

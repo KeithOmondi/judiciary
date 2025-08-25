@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loadUser } from "./store/slices/authSlice";
 
 import { userRoutes, adminRoutes, authRoutes } from "./routes";
 import PrivateRoute from "./auth/PrivateRoute";
@@ -9,21 +11,21 @@ import NotFound from "./components/NotFound";
 import { ToastContainer } from "react-toastify";
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadUser()); // ✅ ensures user is loaded from backend cookie
+  }, [dispatch]);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public / Auth Routes */}
-        {authRoutes.map(({ path, element }, i) => (
+        {/* Public Routes */}
+        {userRoutes.map(({ path, element }, i) => (
           <Route key={i} path={path} element={element} />
         ))}
-
-        {/* User Protected Routes */}
-        {userRoutes.map(({ path, element }, i) => (
-          <Route
-            key={i}
-            path={path}
-            element={<PrivateRoute>{element}</PrivateRoute>}
-          />
+        {authRoutes.map(({ path, element }, i) => (
+          <Route key={i} path={path} element={element} />
         ))}
 
         {/* Admin Protected Routes */}

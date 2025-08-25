@@ -3,7 +3,11 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
+
+  if (loading) {
+    return <p className="text-center mt-10">Loading...</p>; // wait until loadUser finishes
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

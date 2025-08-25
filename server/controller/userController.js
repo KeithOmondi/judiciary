@@ -58,7 +58,7 @@ export const registerNewAdmin = catchAsyncErrors(async (req, res, next) => {
   const cloudinaryResponse = await cloudinary.uploader.upload(
     avatar.tempFilePath,
     {
-      folder: "MILLICENT_LIBRARY_SYSTEM",
+      folder: "uploads",
     }
   );
 

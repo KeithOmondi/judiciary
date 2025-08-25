@@ -1,37 +1,33 @@
 import React from "react";
 
-import AddBook from './pages/admin/AddBook';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AllBorrows from './pages/admin/AllBorrows';
-import EditBook from './pages/admin/EditBook';
-import ManageBooks from './pages/admin/ManageBooks';
+// ✅ Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AddRecord from "./pages/admin/AddRecord";
+import EditRecord from "./pages/admin/EditRecord";
 
-import ForgotPassword from './pages/auth/ForgotPassword';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import ResetPassword from './pages/auth/ResetPassword';
-import VerifyOTP from './pages/auth/VerifyOTP';
+// ✅ Auth Pages
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import VerifyOTP from "./pages/auth/VerifyOTP";
 
-import BookDetails from './pages/user/BookDetails';
-import Books from './pages/user/Books';
-import ChangePassword from './pages/user/ChangePassword';
-import Dashboard from './pages/user/Dashboard';
-import MyBorrows from './pages/user/MyBorrows';
-import Profile from './pages/user/Profile';
-import UserLayout from "./components/user/UserLayout/UserLayout";
+// ✅ Public Page
+import RecordsPage from "./pages/user/RecordsPage";
+
+// ✅ Layouts
 import AdminLayout from "./components/admin/AdminLayout/AdminLayout";
-import BorrowedBooksList from "./components/admin/BorrowedBooksList";
+import ManageRecordsPage from "./pages/admin/ManageRecordsPage";
 
+// =================== USER (PUBLIC) ROUTES ===================
 export const userRoutes = [
-  { path: "/dashboard", element: <UserLayout><Dashboard /></UserLayout> },
-  { path: "/books", element: <UserLayout><Books /></UserLayout> },
-  { path: "/books/:id", element: <UserLayout><BookDetails /></UserLayout> },
-  { path: "/my-borrows", element: <UserLayout><MyBorrows /></UserLayout> },
-  { path: "/profile", element: <UserLayout><Profile /></UserLayout> },
-  { path: "/change-password", element: <UserLayout><ChangePassword /></UserLayout> },
+  {
+    path: "/",
+    element: <RecordsPage />, // ⬅️ no UserLayout
+  },
 ];
 
-
+// =================== ADMIN ROUTES ===================
 export const adminRoutes = [
   {
     path: "/admin/dashboard",
@@ -42,53 +38,36 @@ export const adminRoutes = [
     ),
   },
   {
-    path: "/admin/books",
+    path: "/admin/records",
     element: (
       <AdminLayout>
-        <ManageBooks />
+        <ManageRecordsPage />
       </AdminLayout>
     ),
   },
   {
-    path: "/admin/books/add",
+    path: "/admin/records/add",
     element: (
       <AdminLayout>
-        <AddBook />
+        <AddRecord />
       </AdminLayout>
     ),
   },
   {
-    path: "/admin/books/edit/:id",
+    path: "/admin/records/edit/:id",
     element: (
       <AdminLayout>
-        <EditBook />
-      </AdminLayout>
-    ),
-  },
-  {
-    path: "/admin/borrows",
-    element: (
-      <AdminLayout>
-        <AllBorrows />
-      </AdminLayout>
-    ),
-  },
-  {
-    path: "/admin/borrowed-books", // ✅ New Route
-    element: (
-      <AdminLayout>
-        <BorrowedBooksList />
+        <EditRecord />
       </AdminLayout>
     ),
   },
 ];
 
-
+// =================== AUTH ROUTES ===================
 export const authRoutes = [
   { path: "/login", element: <Login /> },
-  { path: "/register", element: <Register /> },
+  { path: "/register", element: <Register /> }, // optional
   { path: "/verify-otp", element: <VerifyOTP /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
   { path: "/password/reset/:token", element: <ResetPassword /> },
-
 ];
