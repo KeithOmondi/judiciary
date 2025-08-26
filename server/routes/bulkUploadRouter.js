@@ -7,6 +7,8 @@ import {
 import {
   bulkUploadRecords,
   fetchAllBulkRecords,
+  getBulkReport,
+  getBulkStats,
 } from "../controller/bulkUploadController.js";
 
 const router = express.Router();
@@ -26,5 +28,9 @@ router.get(
   isAuthorized("Admin"),
   fetchAllBulkRecords
 );
+
+router.get("/stats", isAuthenticated, isAuthorized("Admin"), getBulkStats);
+router.get("/report", isAuthenticated, isAuthorized("Admin"), getBulkReport);
+
 
 export default router;

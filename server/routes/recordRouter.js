@@ -6,6 +6,7 @@ import {
   updateRecord,
   deleteRecord,
   getAllRecordsForAdmin,
+  getRecordStats,
 } from "../controller/recordController.js";
 import { isAuthenticated, isAuthorized } from "../middlewares/authMiddleware.js";
 
@@ -30,5 +31,9 @@ router.delete("/delete/:id", isAuthenticated, isAuthorized("Admin"), deleteRecor
 
 // Admin-only
 router.get("/admin", isAuthenticated, isAuthorized("Admin"), getAllRecordsForAdmin);
+
+// routes/recordRoutes.js
+router.get("/stats", isAuthenticated, isAuthorized("Admin"), getRecordStats);
+
 
 export default router;

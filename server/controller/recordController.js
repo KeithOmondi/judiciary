@@ -220,5 +220,26 @@ const formatCourtStation = (rawText) => {
 };
 
 
+// controllers/recordController.js
+export const getRecordStats = async (req, res) => {
+  try {
+    const records = await Record.find();
+
+    const totalRecords = records.length;
+    const approved = records.filter(r => r.statusAtGP === "Approved").length;
+    const pending = records.filter(r => r.statusAtGP === "Pending").length;
+
+    const recent = records
+      .sort((a, b) => new Date(b.datePublished) - new Date(a.datePublished))
+      .slice(0, 5);
+
+    res.json({ totalRecords, approved, pending, recent });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch stats", error: err.message });
+  }
+};
+
+
+
 
 

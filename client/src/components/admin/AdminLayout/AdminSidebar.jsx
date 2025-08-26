@@ -8,6 +8,7 @@ import {
   MdPeople,
   MdLock,
   MdLogout,
+  MdAssessment, // 📊 for report
 } from "react-icons/md";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -37,6 +38,11 @@ const AdminSidebar = () => {
       to: "/admin/records/bulk-upload",
       label: "Bulk Upload",
       icon: <MdUploadFile size={20} />,
+    },
+    {
+      to: "/admin/bulk-report",
+      label: "Bulk Report",
+      icon: <MdAssessment size={20} />, // 📊 Report icon
     },
     {
       to: "/admin/users",

@@ -2,7 +2,18 @@ import fs from "fs";
 import pdfParse from "pdf-parse";
 import Tesseract from "tesseract.js";
 import BulkRecord from "../models/BulkRecord.js";
+import { COURT_MAP } from "../stationMap/COURT_MAP.js";
 
+
+// Normalize & lookup court station
+function normalizeCourt(rawStation) {
+  const key = rawStation.toUpperCase().replace(/\s+/g, " ").trim();
+  return COURT_MAP[key] || "Unknown Court";
+}
+
+// ================================
+// Upload PDFs and parse into records
+// ================================
 // Upload PDFs and parse into records
 export const bulkUploadRecords = async (req, res) => {
   try {
@@ -41,17 +52,34 @@ export const bulkUploadRecords = async (req, res) => {
         continue;
       }
 
+      // Normalize whitespace
       text = text.replace(/\r\n|\n/g, " ").replace(/\s{2,}/g, " ");
 
-      // Extract Volume No from filename
-      const volumeMatch = file.originalname.match(/Vol\.\s*(\d+)/i);
-      const volumeNo = volumeMatch ? volumeMatch[1] : "Unknown";
+      // ✅ Extract Volume No (fix: capture full "CXXVII—No. 155")
+      let volumeNo = "Unknown";
+      const volumeMatchText = text.match(/Vol\.\s*([A-Z0-9—\-\.\s]+No\.\s*\d+)/i);
+      if (volumeMatchText) {
+        volumeNo = volumeMatchText[1].trim();
+      }
 
       // Get next record number
       let lastRecord = await BulkRecord.findOne().sort({ no: -1 });
       let nextNo = lastRecord ? lastRecord.no + 1 : 1;
 
-      // Split PDF text into individual records
+      // ✅ Capture court station headings (up to city only)
+      const courtHeadingRegex =
+        /(IN THE HIGH COURT OF KENYA AT\s+[A-Z]+|CHIEF MAGISTRATE\S* COURT AT\s+[A-Z]+|MAGISTRATE\S* COURT (AT|OF)\s+[A-Z]+)/gi;
+
+      let courtHeadings = [];
+      let match;
+      while ((match = courtHeadingRegex.exec(text)) !== null) {
+        courtHeadings.push({
+          station: match[0],
+          index: match.index,
+        });
+      }
+
+      // Split into cause blocks
       const blocks = text.split(/CAUSE NO\./gi);
 
       for (const block of blocks) {
@@ -63,38 +91,46 @@ export const bulkUploadRecords = async (req, res) => {
         if (!causeMatch) continue;
         const causeNo = causeMatch[0].trim();
 
-        // Extract Name of Deceased
-        const nameMatch = cleanBlock.match(/By\s+(?:\(1\)\s+)?([\s\S]*?),.*?the deceased/i);
+        // ✅ Extract Name of Deceased (fix: avoid Gazette boilerplate)
+        const nameMatch = cleanBlock.match(/By\s+(?:\(\d+\)\s+)?(.*?),\s.*?the deceased/i);
         if (!nameMatch) continue;
         const nameOfDeceased = nameMatch[1].trim();
 
-        // Extract Court Station
-        let courtStation = "Unknown";
-        const courtPatterns = [
-          /IN THE HIGH COURT OF KENYA AT\s+([A-Z\s]+)/i,
-          /IN THE COURT AT\s+([A-Z\s]+)/i,
-          /CHIEF MAGISTRATE\S* COURT AT\s+([A-Z\s]+)/i,
-          /MAGISTRATE COURT OF\s+([A-Z\s]+)/i,
-        ];
+        // ✅ Find nearest court station above this block & standardize
+        let blockIndex = text.indexOf(cleanBlock);
+        let courtStation = "Unknown Court";
 
-        for (const pattern of courtPatterns) {
-          const match = cleanBlock.match(pattern);
-          if (match && match[1]) {
-            const city = match[1]
-              .trim()
+        for (let i = courtHeadings.length - 1; i >= 0; i--) {
+          if (courtHeadings[i].index < blockIndex) {
+            let rawStation = courtHeadings[i].station.trim();
+
+            let city = rawStation
+              .replace(/IN THE HIGH COURT OF KENYA AT/i, "")
+              .replace(/CHIEF MAGISTRATE\S* COURT AT/i, "")
+              .replace(/MAGISTRATE\S* COURT (AT|OF)/i, "")
+              .trim();
+
+            // Normalize casing
+            city = city
               .split(/\s+/)
-              .slice(0, 3) // take only first 1-3 words
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
               .join(" ");
 
-            courtStation = /HIGH COURT/i.test(match[0])
-              ? `${city} High Court`
-              : `${city} Magistrate Court`;
+            // Decide type
+            if (/HIGH COURT/i.test(rawStation)) {
+              courtStation = `${city} High Court`;
+            } else if (/CHIEF MAGISTRATE/i.test(rawStation)) {
+              courtStation = `${city} Chief Magistrate Court`;
+            } else if (/MAGISTRATE/i.test(rawStation)) {
+              courtStation = `${city} Magistrate Court`;
+            } else {
+              courtStation = city; // fallback
+            }
             break;
           }
         }
 
-        // Extract Date Published
+        // Extract Date Published (optional)
         let datePublished = null;
         let dateMatch = cleanBlock.match(/(\d{1,2}(st|nd|rd|th)?\s+\w+\s+\d{4})/i);
         if (dateMatch) datePublished = new Date(dateMatch[0]);
@@ -152,7 +188,9 @@ export const bulkUploadRecords = async (req, res) => {
   }
 };
 
-// ✅ New: Fetch all bulk records
+// ================================
+// Fetch all bulk records
+// ================================
 export const fetchAllBulkRecords = async (req, res) => {
   try {
     const records = await BulkRecord.find().sort({ no: 1 });
@@ -170,3 +208,100 @@ export const fetchAllBulkRecords = async (req, res) => {
     });
   }
 };
+
+
+export const getBulkStats = async (req, res) => {
+  try {
+    // Total number of uploaded cases
+    const totalCases = await BulkRecord.countDocuments();
+
+    // Total number of unique courts
+    const courts = await BulkRecord.distinct("courtStation");
+    const totalCourts = courts.length;
+
+    // Group by Volume No
+    const byVolumeAgg = await BulkRecord.aggregate([
+      { $group: { _id: "$volumeNo", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    const byVolume = {};
+    byVolumeAgg.forEach((v) => {
+      byVolume[v._id] = v.count;
+    });
+
+    // Recent 5 gazettes (by published date)
+    const recentBulk = await BulkRecord.find({})
+      .sort({ datePublished: -1 })
+      .limit(5)
+      .select("volumeNo datePublished")
+      .lean();
+
+    res.json({
+      totalCases,
+      totalCourts,
+      byVolume,
+      recentBulk
+    });
+  } catch (err) {
+    console.error("Bulk stats error:", err);
+    res.status(500).json({ message: "Failed to fetch bulk stats" });
+  }
+};
+
+export const getBulkReport = async (req, res) => {
+  try {
+    let { startDate, endDate } = req.query;
+
+    // Default last 30 days if not provided
+    if (!startDate || !endDate) {
+      const now = new Date();
+      endDate = now;
+      startDate = new Date();
+      startDate.setMonth(now.getMonth() - 1);
+    } else {
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+    }
+
+    const report = await BulkRecord.aggregate([
+      {
+        $match: {
+          datePublished: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            court: "$courtStation",
+            volume: "$volumeNo",
+          },
+          totalCases: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.court",
+          volumes: {
+            $push: {
+              volume: "$_id.volume",
+              totalCases: "$totalCases",
+            },
+          },
+          totalCases: { $sum: "$totalCases" },
+        },
+      },
+      { $sort: { totalCases: -1 } },
+    ]);
+
+    res.json({
+      startDate,
+      endDate,
+      report,
+    });
+  } catch (err) {
+    console.error("Bulk report error:", err);
+    res.status(500).json({ message: "Failed to fetch bulk report" });
+  }
+};
+
+

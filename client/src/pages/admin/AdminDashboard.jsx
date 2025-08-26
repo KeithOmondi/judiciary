@@ -1,60 +1,47 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAdminStats, fetchBulkStats } from "../../store/slices/adminSlice";
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalRecords: 0,
-    approved: 0,
-    pending: 0,
-  });
-  const [recentRecords, setRecentRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const {
+    totalRecords,
+    approved,
+    pending,
+    recentRecords,
+    totalCases,
+    totalCourts,
+    byVolume,
+    recentBulk,
+    loading,
+    error,
+  } = useSelector((state) => state.admin);
 
-  const fetchStats = async () => {
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/v1/records"); // fetch all records
-      const records = data.records || [];
-
-      // Compute stats
-      const totalRecords = records.length;
-      const approved = records.filter((r) => r.statusAtGP === "Approved").length;
-      const pending = records.filter((r) => r.statusAtGP === "Pending").length;
-
-      // Sort by newest published date for recent records
-      const recent = [...records]
-        .sort((a, b) => new Date(b.datePublished) - new Date(a.datePublished))
-        .slice(0, 5); // last 5 records
-
-      setStats({ totalRecords, approved, pending });
-      setRecentRecords(recent);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching dashboard stats", err);
-      setLoading(false);
-    }
-  };
-
-  // Fetch stats on mount
+  // Fetch both record stats and bulk stats
   useEffect(() => {
-    fetchStats();
+    dispatch(fetchAdminStats());
+    dispatch(fetchBulkStats());
+  }, [dispatch]);
 
-    // Optional: poll every 30 seconds for real-time update
-    const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const recordCards = [
+    { title: "Total Records", value: totalRecords, color: "bg-blue-500" },
+    { title: "Approved Records", value: approved, color: "bg-green-500" },
+    { title: "Pending Records", value: pending, color: "bg-yellow-500" },
+  ];
 
-  const cards = [
-    { title: "Total Records", value: stats.totalRecords, color: "bg-blue-500" },
-    { title: "Approved Records", value: stats.approved, color: "bg-green-500" },
-    { title: "Pending Records", value: stats.pending, color: "bg-yellow-500" },
+  const bulkCards = [
+    { title: "Total Bulk Cases", value: totalCases, color: "bg-purple-500" },
+    { title: "Total Courts Covered", value: totalCourts, color: "bg-pink-500" },
   ];
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((c, idx) => (
+      {/* Record Stats */}
+      <h2 className="text-xl font-semibold mb-4">📊 Records Overview</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        {recordCards.map((c, idx) => (
           <div
             key={idx}
             className={`${c.color} text-white rounded-lg p-6 shadow-md`}
@@ -65,22 +52,82 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* Bulk Stats */}
+      <h2 className="text-xl font-semibold mb-4">📦 Bulk Gazette Overview</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        {bulkCards.map((c, idx) => (
+          <div
+            key={idx}
+            className={`${c.color} text-white rounded-lg p-6 shadow-md`}
+          >
+            <h2 className="text-lg font-semibold">{c.title}</h2>
+            <p className="text-3xl font-bold">{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* By Volume Breakdown */}
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-2">📚 Cases by Volume</h2>
+        {byVolume && Object.keys(byVolume).length > 0 ? (
+          <ul className="list-disc list-inside space-y-1">
+            {Object.entries(byVolume).map(([volume, count]) => (
+              <li key={volume}>
+                <span className="font-medium">Volume {volume}:</span> {count}{" "}
+                cases
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500">No volume breakdown available.</p>
+        )}
+      </div>
+
+      {/* Recent Records */}
       <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">Recent Records</h2>
+        <h2 className="text-xl font-semibold mb-4">🕒 Recent Records</h2>
         {loading ? (
           <p className="text-gray-500">Loading recent records...</p>
         ) : recentRecords.length > 0 ? (
           <ul className="space-y-2">
             {recentRecords.map((r) => (
               <li key={r._id} className="border-b pb-2">
-                {r.courtStation} | {r.causeNo} | {r.nameOfDeceased} | {r.statusAtGP}
+                {r.courtStation} | {r.causeNo} | {r.nameOfDeceased} |{" "}
+                <span className="font-semibold">{r.statusAtGP}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">No records found.</p>
+          <p className="text-gray-500">No recent records found.</p>
         )}
       </div>
+
+      {/* Recent Bulk */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-4">
+          📰 Recent Bulk Gazette Uploads
+        </h2>
+        {loading ? (
+          <p className="text-gray-500">Loading recent bulk...</p>
+        ) : recentBulk.length > 0 ? (
+          <ul className="space-y-2">
+            {recentBulk.map((b, idx) => (
+              <li key={idx} className="border-b pb-2">
+                <span className="font-medium">Volume {b.volumeNo}</span> |{" "}
+                {b.totalCases} cases | Published:{" "}
+                {b.datePublished
+                  ? new Date(b.datePublished).toLocaleDateString()
+                  : "-"}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500">No recent bulk uploads found.</p>
+        )}
+      </div>
+
+      {/* Error handling */}
+      {error && <p className="text-red-500 mt-6">⚠️ {error}</p>}
     </div>
   );
 };
