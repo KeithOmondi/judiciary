@@ -20,6 +20,7 @@ import AdminLayout from "./components/admin/AdminLayout/AdminLayout";
 import ManageRecordsPage from "./pages/admin/ManageRecordsPage";
 import BulkUpload from "./components/admin/BulkUpload";
 import BulkReport from "./pages/admin/BulkReport";
+import VerifyRecords from "./components/admin/VerifyRecords";
 
 // =================== USER (PUBLIC) ROUTES ===================
 export const userRoutes = [
@@ -76,6 +77,14 @@ export const adminRoutes = [
     element: (
       <AdminLayout>
         <BulkReport />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/verify",
+    element: (
+      <AdminLayout>
+        <VerifyRecords />
       </AdminLayout>
     ),
   },

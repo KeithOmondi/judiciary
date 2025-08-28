@@ -1,6 +1,34 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdminStats, fetchBulkStats } from "../../store/slices/adminSlice";
+import { ChevronDown, ChevronRight } from "lucide-react";
+
+// ✅ Collapsible reusable section
+const CollapsibleSection = ({ title, icon, children }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-8">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+      >
+        <div className="flex items-center gap-2 text-lg font-semibold">
+          {icon} {title}
+        </div>
+        {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+      </button>
+
+      <div
+        className={`transition-all duration-300 overflow-hidden ${
+          open ? "max-h-screen mt-3" : "max-h-0"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -66,65 +94,101 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* By Volume Breakdown */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-2">📚 Cases by Volume</h2>
+      {/* Collapsible Sections */}
+      <CollapsibleSection title="📚 Cases by Volume">
         {byVolume && Object.keys(byVolume).length > 0 ? (
-          <ul className="list-disc list-inside space-y-1">
-            {Object.entries(byVolume).map(([volume, count]) => (
-              <li key={volume}>
-                <span className="font-medium">Volume {volume}:</span> {count}{" "}
-                cases
-              </li>
-            ))}
-          </ul>
+          <div className="bg-white shadow rounded-lg p-4">
+            <ul className="divide-y divide-gray-200">
+              {Object.entries(byVolume).map(([volume, count]) => (
+                <li
+                  key={volume}
+                  className="py-2 flex justify-between items-center hover:bg-gray-50 rounded-md px-2 transition"
+                >
+                  <span className="font-medium text-gray-700">
+                    Volume {volume}
+                  </span>
+                  <span className="text-blue-600 font-semibold">
+                    {count} cases
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <p className="text-gray-500">No volume breakdown available.</p>
+          <p className="text-gray-500 italic">No volume breakdown available.</p>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* Recent Records */}
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">🕒 Recent Records</h2>
+      <CollapsibleSection title="🕒 Recent Records">
         {loading ? (
           <p className="text-gray-500">Loading recent records...</p>
         ) : recentRecords.length > 0 ? (
-          <ul className="space-y-2">
-            {recentRecords.map((r) => (
-              <li key={r._id} className="border-b pb-2">
-                {r.courtStation} | {r.causeNo} | {r.nameOfDeceased} |{" "}
-                <span className="font-semibold">{r.statusAtGP}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <ul className="divide-y divide-gray-200">
+              {recentRecords.map((r) => (
+                <li
+                  key={r._id}
+                  className="p-4 hover:bg-gray-50 flex justify-between transition"
+                >
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">{r.courtStation}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Cause: {r.causeNo} | Deceased: {r.nameOfDeceased}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      r.statusAtGP === "Approved"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {r.statusAtGP}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <p className="text-gray-500">No recent records found.</p>
+          <p className="text-gray-500 italic">No recent records found.</p>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* Recent Bulk */}
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">
-          📰 Recent Bulk Gazette Uploads
-        </h2>
+      <CollapsibleSection title="📰 Recent Bulk Gazette Uploads">
         {loading ? (
           <p className="text-gray-500">Loading recent bulk...</p>
         ) : recentBulk.length > 0 ? (
-          <ul className="space-y-2">
-            {recentBulk.map((b, idx) => (
-              <li key={idx} className="border-b pb-2">
-                <span className="font-medium">Volume {b.volumeNo}</span> |{" "}
-                {b.totalCases} cases | Published:{" "}
-                {b.datePublished
-                  ? new Date(b.datePublished).toLocaleDateString()
-                  : "-"}
-              </li>
-            ))}
-          </ul>
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <ul className="divide-y divide-gray-200">
+              {recentBulk.map((b, idx) => (
+                <li
+                  key={idx}
+                  className="p-4 hover:bg-gray-50 flex justify-between items-center transition"
+                >
+                  <div>
+                    <p className="font-medium text-gray-700">
+                      Volume {b.volumeNo}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Published:{" "}
+                      {b.datePublished
+                        ? new Date(b.datePublished).toLocaleDateString()
+                        : "-"}
+                    </p>
+                  </div>
+                  <span className="text-blue-600 font-semibold">
+                    {b.totalCases} cases
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <p className="text-gray-500">No recent bulk uploads found.</p>
+          <p className="text-gray-500 italic">No recent bulk uploads found.</p>
         )}
-      </div>
+      </CollapsibleSection>
 
       {/* Error handling */}
       {error && <p className="text-red-500 mt-6">⚠️ {error}</p>}

@@ -7,8 +7,12 @@ import {
   deleteRecord,
   getAllRecordsForAdmin,
   getRecordStats,
+  bulkAddRecords,
+  verifyRecords,
 } from "../controller/recordController.js";
 import { isAuthenticated, isAuthorized } from "../middlewares/authMiddleware.js";
+import { uploadExcel } from "../middlewares/uploadExcel.js";
+import { uploadVerify } from "../middlewares/uploadVerify.js";
 
 const router = express.Router();
 
@@ -34,6 +38,12 @@ router.get("/admin", isAuthenticated, isAuthorized("Admin"), getAllRecordsForAdm
 
 // routes/recordRoutes.js
 router.get("/stats", isAuthenticated, isAuthorized("Admin"), getRecordStats);
+
+// bulk addRecordRoute
+router.post("/bulk-upload", isAuthenticated, isAuthorized("Admin"), uploadExcel.single("file"), bulkAddRecords)
+
+// ✅ POST /api/v1/records/verify
+router.post("/verify",isAuthenticated,isAuthorized("Admin"), uploadVerify, verifyRecords);
 
 
 export default router;

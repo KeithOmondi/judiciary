@@ -16,7 +16,8 @@ const BulkUpload = () => {
 
   const [pdfFiles, setPdfFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [openVolumes, setOpenVolumes] = useState({}); // track opened gazettes
+  const [openVolumes, setOpenVolumes] = useState({});
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ search filter state
 
   // Fetch bulk records on mount
   useEffect(() => {
@@ -51,19 +52,30 @@ const BulkUpload = () => {
     await dispatch(bulkUploadRecords(formData));
   };
 
-  // Group records by volumeNo
-  const groupedRecords = records.reduce((acc, r) => {
-    if (!acc[r.volumeNo]) acc[r.volumeNo] = [];
-    acc[r.volumeNo].push(r);
-    return acc;
-  }, {});
-
   const toggleVolume = (volumeNo) => {
     setOpenVolumes((prev) => ({
       ...prev,
       [volumeNo]: !prev[volumeNo],
     }));
   };
+
+  // ✅ Apply search filter to records before grouping
+  const filteredRecords = records.filter((r) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      r.courtStation?.toLowerCase().includes(term) ||
+      r.causeNo?.toLowerCase().includes(term) ||
+      r.nameOfDeceased?.toLowerCase().includes(term) ||
+      String(r.volumeNo).includes(term)
+    );
+  });
+
+  // Group filtered records by volumeNo
+  const groupedRecords = filteredRecords.reduce((acc, r) => {
+    if (!acc[r.volumeNo]) acc[r.volumeNo] = [];
+    acc[r.volumeNo].push(r);
+    return acc;
+  }, {});
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-white rounded shadow">
@@ -109,12 +121,23 @@ const BulkUpload = () => {
         </button>
       </form>
 
+      {/* ✅ Search Filter */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="🔍 Search by Court, Cause No, Deceased Name, or Volume..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full border p-2 rounded"
+        />
+      </div>
+
       {/* Records Display */}
       {loading ? (
         <p>Loading records...</p>
       ) : (
         <>
-          {records.length > 0 ? (
+          {filteredRecords.length > 0 ? (
             Object.entries(groupedRecords).map(([volumeNo, group]) => (
               <div key={volumeNo} className="mb-6 border rounded">
                 {/* Gazette Header */}

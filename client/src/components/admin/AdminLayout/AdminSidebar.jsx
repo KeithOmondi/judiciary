@@ -49,6 +49,11 @@ const AdminSidebar = () => {
       label: "Manage Users",
       icon: <MdPeople size={20} />,
     },
+     {
+      to: "/admin/verify",
+      label: "Verify Records",
+      icon: <MdPeople size={20} />,
+    },
     {
       to: "/change-password",
       label: "Change Password",

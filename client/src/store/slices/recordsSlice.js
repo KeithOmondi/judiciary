@@ -3,6 +3,8 @@ import axios from "axios";
 
 const RECORD_API = "http://localhost:8000/api/v1/records";
 
+/* ------------------------- ASYNC THUNKS ------------------------- */
+
 // Fetch all records (public, paginated)
 export const fetchRecords = createAsyncThunk(
   "records/fetchAll",
@@ -29,7 +31,7 @@ export const fetchAllRecordsForAdmin = createAsyncThunk(
   }
 );
 
-// Add record
+// Add a single record (manual form)
 export const addRecord = createAsyncThunk(
   "records/add",
   async (data, { rejectWithValue }) => {
@@ -38,6 +40,22 @@ export const addRecord = createAsyncThunk(
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to add record");
+    }
+  }
+);
+
+// Bulk upload records (Excel sheet)
+export const bulkUploadRecords = createAsyncThunk(
+  "records/bulkUpload",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${RECORD_API}/bulk-upload`, formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data; // { message, count, records? }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to bulk upload records");
     }
   }
 );
@@ -68,6 +86,8 @@ export const deleteRecord = createAsyncThunk(
   }
 );
 
+/* ------------------------- SLICE ------------------------- */
+
 const recordsSlice = createSlice({
   name: "records",
   initialState: {
@@ -92,7 +112,7 @@ const recordsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch records
+      /* ----- Fetch (user) ----- */
       .addCase(fetchRecords.pending, (state) => {
         state.loading = true;
       })
@@ -108,7 +128,7 @@ const recordsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch all records for admin
+      /* ----- Fetch (admin) ----- */
       .addCase(fetchAllRecordsForAdmin.pending, (state) => {
         state.loading = true;
       })
@@ -121,24 +141,50 @@ const recordsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Add record
+      /* ----- Add record ----- */
+      .addCase(addRecord.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(addRecord.fulfilled, (state, action) => {
+        state.loading = false;
         state.records.unshift(action.payload);
-        state.message = "Record added successfully";
+        state.message = "✅ Record added successfully";
+      })
+      .addCase(addRecord.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
-      // Update record
+      /* ----- Bulk upload ----- */
+      .addCase(bulkUploadRecords.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(bulkUploadRecords.fulfilled, (state, action) => {
+        state.loading = false;
+        state.message = action.payload.message || "✅ Bulk upload successful";
+
+        // Append new records if returned
+        if (action.payload.records) {
+          state.records = [...action.payload.records, ...state.records];
+        }
+      })
+      .addCase(bulkUploadRecords.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      /* ----- Update record ----- */
       .addCase(updateRecord.fulfilled, (state, action) => {
         state.records = state.records.map((r) =>
           r._id === action.payload._id ? action.payload : r
         );
-        state.message = "Record updated successfully";
+        state.message = "✅ Record updated successfully";
       })
 
-      // Delete record
+      /* ----- Delete record ----- */
       .addCase(deleteRecord.fulfilled, (state, action) => {
         state.records = state.records.filter((r) => r._id !== action.payload);
-        state.message = "Record deleted successfully";
+        state.message = "🗑️ Record deleted successfully";
       });
   },
 });

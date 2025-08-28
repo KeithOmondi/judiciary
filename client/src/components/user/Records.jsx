@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchRecords } from "../../store/slices/recordsSlice";
+import { fetchRecords, bulkUploadRecords } from "../../store/slices/recordsSlice";
 
 const Records = () => {
   const dispatch = useDispatch();
@@ -8,16 +8,31 @@ const Records = () => {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedRecord, setSelectedRecord] = useState(null); // For popup
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [excelFile, setExcelFile] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchRecords());
+    dispatch(fetchRecords()); // ✅ Load all records (manual + bulk-inserted)
   }, [dispatch]);
+
+  const handleExcelUpload = (e) => {
+    e.preventDefault();
+    if (!excelFile) return;
+
+    const formData = new FormData();
+    formData.append("file", excelFile);
+
+    dispatch(bulkUploadRecords(formData)).then(() => {
+      // Refresh after upload
+      dispatch(fetchRecords());
+      setExcelFile(null);
+    });
+  };
 
   const filteredRecords = records.filter((r) => {
     const matchesSearch =
-      r.nameOfDeceased.toLowerCase().includes(search.toLowerCase()) ||
-      r.causeNo.toLowerCase().includes(search.toLowerCase());
+      r.nameOfDeceased?.toLowerCase().includes(search.toLowerCase()) ||
+      r.causeNo?.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
       statusFilter === "All" ? true : r.statusAtGP === statusFilter;
@@ -33,6 +48,26 @@ const Records = () => {
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
         📜 Available Records
       </h2>
+
+      {/* Excel Upload */}
+      <form
+        onSubmit={handleExcelUpload}
+        className="mb-6 flex flex-col md:flex-row items-center gap-4"
+      >
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={(e) => setExcelFile(e.target.files[0])}
+          className="p-2 border rounded-lg"
+        />
+        <button
+          type="submit"
+          disabled={!excelFile}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50"
+        >
+          Upload Excel
+        </button>
+      </form>
 
       {/* Search & Filter */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
@@ -74,7 +109,7 @@ const Records = () => {
             <tbody>
               {filteredRecords.map((r, idx) => (
                 <tr
-                  key={r._id}
+                  key={r._id || idx}
                   className={`${
                     idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                   } hover:bg-blue-50 transition`}
@@ -118,7 +153,7 @@ const Records = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal for Rejection Reason */}
       {selectedRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white w-96 rounded-lg shadow-lg p-6 relative">
